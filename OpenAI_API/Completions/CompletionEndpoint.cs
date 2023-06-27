@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
+using System.Security.Authentication;
+using System.Text;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using OpenAI_API.Models;
 
 namespace OpenAI_API.Completions
@@ -33,10 +37,43 @@ namespace OpenAI_API.Completions
 		/// Ask the API to complete the prompt(s) using the specified request.  This is non-streaming, so it will wait until the API returns the full result.
 		/// </summary>
 		/// <param name="request">The request to send to the API.  This does not fall back to default values specified in <see cref="DefaultCompletionRequestArgs"/>.</param>
-		/// <returns>Asynchronously returns the completion result.  Look in its <see cref="CompletionResult.Completions"/> property for the completions.</returns>
+		/// <returns>Asynchronously returns the completion result.  Look in its <see cref="CompletionResult.Choices"/> property for the completions.</returns>
 		public async Task<CompletionResult> CreateCompletionAsync(CompletionRequest request)
 		{
-			return await HttpPost<CompletionResult>(postData: request);
+			if (_Api.Auth?.ApiKey is null)
+			{
+				throw new AuthenticationException("You must provide API authentication.  Please refer to https://github.com/OkGoDoIt/OpenAI-API-dotnet#authentication for details.");
+			}
+
+			request.Stream = false;
+			HttpClient client = new HttpClient();
+			client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _Api.Auth.ApiKey);
+			client.DefaultRequestHeaders.Add("User-Agent", "okgodoit/dotnet_openai_api");
+
+			string jsonContent = JsonConvert.SerializeObject(request, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+			var stringContent = new StringContent(jsonContent, UnicodeEncoding.UTF8, "application/json");
+
+			var response = await client.PostAsync($"https://api.openai.com/v1/engines/{_Api.UsingEngine.EngineName}/completions", stringContent);
+			if (response.IsSuccessStatusCode)
+			{
+				string resultAsString = await response.Content.ReadAsStringAsync();
+
+				var res = JsonConvert.DeserializeObject<CompletionResult>(resultAsString);
+				try
+				{
+					res.Organization = response.Headers.GetValues("Openai-Organization").FirstOrDefault();
+					res.RequestId = response.Headers.GetValues("X-Request-ID").FirstOrDefault();
+					res.ProcessingTime = TimeSpan.FromMilliseconds(int.Parse(response.Headers.GetValues("Openai-Processing-Ms").First()));
+				}
+				catch (Exception) { }
+
+
+				return res;
+			}
+			else
+			{
+				throw new HttpRequestException("Error calling OpenAi API to get completion.  HTTP status code: " + response.StatusCode.ToString() + ". Request body: " + jsonContent);
+			}
 		}
 
 		/// <summary>
