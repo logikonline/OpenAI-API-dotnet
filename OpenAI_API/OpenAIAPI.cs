@@ -37,6 +37,11 @@ namespace OpenAI_API
 		public IHttpClientFactory HttpClientFactory { get; set; }
 
 		/// <summary>
+		/// Specifies which <see cref="Engine"/>/model to use for API calls
+		/// </summary>
+		public Engine UsingEngine { get; set; } = Engine.Default;
+
+		/// <summary>
 		/// Creates a new entry point to the OpenAPI API, handling auth and allowing access to the various API endpoints
 		/// </summary>
 		/// <param name="apiKeys">The API authentication information to use for API calls, or <see langword="null"/> to attempt to use the <see cref="APIAuthentication.Default"/>, potentially loading from environment vars or from a config file.</param>
