@@ -59,7 +59,7 @@ namespace OpenAI_API
 			{
 				throw new AuthenticationException("You must provide API authentication.  Please refer to https://github.com/OkGoDoIt/OpenAI-API-dotnet#authentication for details.");
 			}
-	
+
 			HttpClient client;
 			var clientFactory = _Api.HttpClientFactory;
 			if (clientFactory != null)
