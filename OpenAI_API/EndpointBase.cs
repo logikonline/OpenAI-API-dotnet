@@ -68,7 +68,10 @@ namespace OpenAI_API
 			}
 			else
 			{
-				client = new HttpClient();
+				client = new HttpClient
+				{
+					Timeout = TimeSpan.FromSeconds(600) // Set custom timeout here
+				};
 			}
 
 			client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _Api.Auth.ApiKey);
@@ -114,51 +117,57 @@ namespace OpenAI_API
 			using var client = GetClient();
 
 			HttpResponseMessage response = null;
-			string resultAsString = null;
-			HttpRequestMessage req = new HttpRequestMessage(verb, url);
-
-			if (postData != null)
+			try
 			{
-				if (postData is HttpContent)
+				string resultAsString = null;
+				HttpRequestMessage req = new HttpRequestMessage(verb, url);
+
+				if (postData != null)
 				{
-					req.Content = postData as HttpContent;
+					if (postData is HttpContent)
+					{
+						req.Content = postData as HttpContent;
+					}
+					else
+					{
+						string jsonContent = JsonConvert.SerializeObject(postData, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
+						var stringContent = new StringContent(jsonContent, UnicodeEncoding.UTF8, "application/json");
+						req.Content = stringContent;
+					}
+				}
+				response = await client.SendAsync(req, streaming ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead);
+
+				if (response.IsSuccessStatusCode)
+				{
+					return response;
 				}
 				else
 				{
-					string jsonContent = JsonConvert.SerializeObject(postData, new JsonSerializerSettings() { NullValueHandling = NullValueHandling.Ignore });
-					var stringContent = new StringContent(jsonContent, UnicodeEncoding.UTF8, "application/json");
-					req.Content = stringContent;
-				}
-			}
-			response = await client.SendAsync(req, streaming ? HttpCompletionOption.ResponseHeadersRead : HttpCompletionOption.ResponseContentRead);
+					try
+					{
+						resultAsString = await response.Content.ReadAsStringAsync();
+					}
+					catch (Exception e)
+					{
+						resultAsString = "Additionally, the following error was thrown when attemping to read the response content: " + e.ToString();
+					}
 
-			if (response.IsSuccessStatusCode)
+					if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+					{
+						throw new AuthenticationException("OpenAI rejected your authorization, most likely due to an invalid API Key.  Try checking your API Key and see https://github.com/OkGoDoIt/OpenAI-API-dotnet#authentication for guidance.  Full API response follows: " + resultAsString);
+					}
+					else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+					{
+						throw new HttpRequestException("OpenAI had an internal server error, which can happen occasionally.  Please retry your request.  " + GetErrorMessage(resultAsString, response, Endpoint, url));
+					}
+					else
+					{
+						throw new HttpRequestException(GetErrorMessage(resultAsString, response, Endpoint, url));
+					}
+				}
+			} catch (Exception ex)
 			{
-				return response;
-			}
-			else
-			{
-				try
-				{
-					resultAsString = await response.Content.ReadAsStringAsync();
-				}
-				catch (Exception e)
-				{
-					resultAsString = "Additionally, the following error was thrown when attemping to read the response content: " + e.ToString();
-				}
-
-				if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
-				{
-					throw new AuthenticationException("OpenAI rejected your authorization, most likely due to an invalid API Key.  Try checking your API Key and see https://github.com/OkGoDoIt/OpenAI-API-dotnet#authentication for guidance.  Full API response follows: " + resultAsString);
-				}
-				else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
-				{
-					throw new HttpRequestException("OpenAI had an internal server error, which can happen occasionally.  Please retry your request.  " + GetErrorMessage(resultAsString, response, Endpoint, url));
-				}
-				else
-				{
-					throw new HttpRequestException(GetErrorMessage(resultAsString, response, Endpoint, url));
-				}
+				throw new HttpRequestException(GetErrorMessage(ex.Message, response, Endpoint, url));
 			}
 		}
 

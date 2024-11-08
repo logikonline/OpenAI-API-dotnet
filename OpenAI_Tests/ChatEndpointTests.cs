@@ -174,6 +174,7 @@ namespace OpenAI_Tests
 
 				if (result != null)
 				{
+					result.Choices[0].Delta.Function_Call
 					if (result.NextAction == OpenAI_API.Chat.Action.Function)
 					{
 						var functionMessage = new ChatMessage

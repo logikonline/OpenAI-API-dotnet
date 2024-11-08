@@ -145,10 +145,12 @@ namespace OpenAI_API.Chat
 		/// Calls the API to get a response, which is appended to the current chat's <see cref="ChatResult"/> as an <see cref="ChatMessageRole.Assistant"/> <see cref="ChatMessage"/>.
 		/// </summary>
 		/// <returns>The Choices of the response from the chatbot API</returns>
-		public async Task<ChatResult> GetResultFromChatbotAsync()
+		public async Task<ChatResult> GetResultFromChatbotAsync(int max_token = 0)
 		{
 			ChatRequest req = new ChatRequest(RequestParameters);
 			req.Messages = _Messages.ToList();
+			if (max_token > 0)
+				req.MaxTokens = max_token;
 
 			var res = await _endpoint.CreateChatCompletionAsync(req);
 			MostRecentApiResult = res;

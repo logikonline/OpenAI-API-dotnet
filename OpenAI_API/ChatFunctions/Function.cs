@@ -4,34 +4,109 @@ using System;
 
 namespace OpenAI_API.ChatFunctions
 {
-    /// <summary>
-    /// Represents a Function object for the OpenAI API.
-    /// A Function contains information about the function to be called, its description and parameters.
-    /// </summary>
-    /// <remarks>
-    /// The 'Name' property represents the name of the function and must consist of alphanumeric characters, underscores, or dashes, with a maximum length of 64.
-    /// The 'Description' property is an optional field that provides a brief explanation about what the function does.
-    /// The 'Parameters' property describes the parameters that the function accepts, which are represented as a JSON Schema object. 
-    /// Various types of input are acceptable for the 'Parameters' property, such as a JObject, a Dictionary of string and object, an anonymous object, or any other serializable object. 
-    /// If the object is not a JObject, it will be converted into a JObject. 
-    /// Refer to the 'Parameters' property setter for more details.
-    /// Refer to the OpenAI API <see href="https://platform.openai.com/docs/guides/gpt/function-calling">guide</see> and the 
-    /// JSON Schema <see href="https://json-schema.org/understanding-json-schema/">reference</see> for more details on the format of the parameters.
-    /// </remarks>
-    public class Function
+
+    public class Function_Description
+	{
+		[JsonProperty("purpose", Required = Required.Default)]
+		public string Purpose { get; set; }
+
+		[JsonProperty("inputs", Required = Required.Default)]
+		public string Inputs { get; set; }
+
+		[JsonProperty("outputs", Required = Required.Default)]
+		public string Outputs { get; set; }
+
+	}
+
+	public class Function_Data
+	{
+		[JsonProperty("user_inputs", Required = Required.Default)]
+		public string UserInputs { get; set; }
+
+		[JsonProperty("api_calls", Required = Required.Default)]
+		public string ApiCalls { get; set; }
+
+	}
+
+	public class Function_Performance
+	{
+		[JsonProperty("accuracy", Required = Required.Default)]
+		public string Accuracy { get; set; }
+
+		[JsonProperty("efficiency", Required = Required.Default)]
+		public string Efficiency { get; set; }
+
+	}
+
+	public class Function_Unexpected
+	{
+		[JsonProperty("positive", Required = Required.Default)]
+		public string Positive { get; set; }
+
+		[JsonProperty("negative", Required = Required.Default)]
+		public string Negative { get; set; }
+
+	}
+
+	/// <summary>
+	/// Represents a Function object for the OpenAI API.
+	/// A Function contains information about the function to be called, its description and parameters.
+	/// </summary>
+	/// <remarks>
+	/// The 'Name' property represents the name of the function and must consist of alphanumeric characters, underscores, or dashes, with a maximum length of 64.
+	/// The 'Description' property is an optional field that provides a brief explanation about what the function does.
+	/// The 'Parameters' property describes the parameters that the function accepts, which are represented as a JSON Schema object. 
+	/// Various types of input are acceptable for the 'Parameters' property, such as a JObject, a Dictionary of string and object, an anonymous object, or any other serializable object. 
+	/// If the object is not a JObject, it will be converted into a JObject. 
+	/// Refer to the 'Parameters' property setter for more details.
+	/// Refer to the OpenAI API <see href="https://platform.openai.com/docs/guides/gpt/function-calling">guide</see> and the 
+	/// JSON Schema <see href="https://json-schema.org/understanding-json-schema/">reference</see> for more details on the format of the parameters.
+	/// </remarks>
+	public class Function
     {
         /// <summary>
         /// The name of the function to be called. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
         /// </summary>
         [JsonProperty("name", Required = Required.Always)]
         public string Name { get; set; }
+
         /// <summary>
         /// The description of what the function does.
         /// </summary>
         [JsonProperty("description", Required = Required.Default)]
         public string Description { get; set; }
-        
-        private JObject _parameters;
+
+		/// <summary>
+		/// The description of what the function does.
+		/// </summary>
+		[JsonProperty("function_description", Required = Required.Default)]
+		public Function_Description DetailedDescription { get; set; }
+
+		/// <summary>
+		/// The description of what the function does.
+		/// </summary>
+		[JsonProperty("data_used", Required = Required.Default)]
+		public Function_Data DataUsed { get; set; }
+
+		/// <summary>
+		/// The description of what the function does.
+		/// </summary>
+		[JsonProperty("function_performance", Required = Required.Default)]
+		public Function_Performance Performance { get; set; }
+
+		/// <summary>
+		/// The description of what the function does.
+		/// </summary>
+		[JsonProperty("unexpected_behavior", Required = Required.Default)]
+		public Function_Unexpected UnexpectedBehavior { get; set; }
+
+		/// <summary>
+		/// The description of what the function does.
+		/// </summary>
+		[JsonProperty("future_improvements", Required = Required.Default)]
+		public string Improvements { get; set; }
+
+		private JObject _parameters;
         /// <summary>
         /// The parameters that the function accepts, described as a JSON Schema object.
         /// The JSON Schema defines the type and structure of the data. It should be compatible with the JSON Schema standard.
